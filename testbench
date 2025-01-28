@@ -1,0 +1,50 @@
+`timescale 1ns/1ps
+
+module tb_pipeline_processor;
+
+    reg clk;
+    reg reset;
+
+    // Instantiate the processor
+    pipeline_processor uut (
+        .clk(clk),
+        .reset(reset)
+    );
+
+    // Clock generation
+    always #5 clk = ~clk;
+
+    // Dump waveforms for EPWave
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(0, tb_pipeline_processor); // Dump all signals in the testbench
+        $dumpvars(1, uut); // Dump all signals in the DUT
+    end
+
+    // Testbench logic
+    initial begin
+        clk = 0;
+        reset = 1;
+        #10 reset = 0;
+
+        // Initialize instruction memory
+        uut.instruction_memory[0] = 32'b000000_00001_00010_00011_00000_000000; // ADD R3, R1, R2
+        uut.instruction_memory[1] = 32'b000001_00001_00010_00100_00000_000000; // SUB R4, R1, R2
+        uut.instruction_memory[2] = 32'b000010_00001_00010_00101_00000_000000; // AND R5, R1, R2
+
+        // Initialize register values
+        uut.register_file[1] = 10; // R1 = 10
+        uut.register_file[2] = 5;  // R2 = 5
+
+        // Run simulation for 100ns
+        #100 $finish;
+    end
+
+    // Monitor signals for debugging
+    initial begin
+        $monitor($time, " PC=%d, IF_ID_instr=%h, EX_MEM_result=%d, MEM_WB_result=%d, R3=%d, R4=%d, R5=%d",
+                 uut.pc, uut.IF_ID_instr, uut.EX_MEM_result, uut.MEM_WB_result,
+                 uut.register_file[3], uut.register_file[4], uut.register_file[5]);
+    end
+
+endmodule
